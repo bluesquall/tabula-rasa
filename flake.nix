@@ -5,25 +5,30 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
+    agenix.url = "github:ryantm/agenix";
+    agenix.inputs.nixpkgs.follows = "nixpkgs";
+
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { nixpkgs, home-manager, ... }:
+  outputs = { nixpkgs, agenix, home-manager, ... }:
   let
 
     lib = nixpkgs.lib;
     system = "x86_64-linux";
+    overlays = [ agenix.overlay ];
 
     pkgs = import nixpkgs {
-      inherit system;
+      inherit system overlays;
 #        config.allowUnfree = true;
 #        # ^enable this if you need all firmware
     };
 
     baseModules = [
+      agenix.nixosModules.age
       ({ lib, pkgs, ... }: {
         nix = {
           package = pkgs.nixUnstable;
@@ -37,7 +42,8 @@
         };
 
         environment.systemPackages = with pkgs; [
-	  bash curl git neovim qrencode tmux zsh
+          agenix.defaultPackage.x86_64-linux
+          bash curl git neovim tmux zsh
         ];
       })
     ];
