@@ -7,7 +7,7 @@ a flaky example of NixOS configuration with full-disk encryption, home-manager, 
 0. get a [NixOS] live system, e.g., from the [NixOS download page], or by
    building the ISO image from this repo's `flake.nix`:
 
-   `nix build .#nixosConfigurations.iso.config.system.build.isoImage`
+   `nix build .#nixosConfigurations.iso.config.system.build.isoImage --impure`
 
 1. boot into the [NixOS] live system
 
@@ -19,7 +19,7 @@ a flaky example of NixOS configuration with full-disk encryption, home-manager, 
 
 3. install NixOS directly from the remote:
 
-      `nixos-install --flake github:bluesquall/tabula-rasa#encom`
+      `nixos-install --flake github:bluesquall/tabula-rasa/agenix#encom`
 
    or by cloning this repo, modifying accordingly, and installing from the
    local clone:

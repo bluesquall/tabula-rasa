@@ -12,9 +12,6 @@ else
   exit 1;
 fi
 
-echo "set password for user:"
-echo "$(mkpasswd -m sha512crypt)" > /tmp/passwd.sha512crypt
-
 echo "preparing drive ${drive} for NixOS"
 echo ""
 echo "WARNING!"
@@ -55,13 +52,12 @@ mount -o subvol=persist,compress=zstd,noatime /dev/mapper/crypt /mnt/persist
 mount -o subvol=log,compress=zstd,noatime /dev/mapper/crypt /mnt/var/log
 mkdir -p /mnt/etc/nixos
 
-mkdir -p /mnt/home/.keys
-mv /tmp/passwd.sha512crypt /mnt/home/.keys
-chmod 700 /mnt/home/.keys
-chmod 600 /mnt/home/.keys/passwd.sha512crypt
-
 echo "prepared ${drive} for NixOS"
 echo "your next step is  to install your system from a flake, e.g.:"
 echo "  time nixos-install --flake .#encom --no-root-password"
 echo "or"
-echo "  nixos-install --flake github:bluesquall/tabula-rasa#encom"
+echo "  nixos-install --flake github:bluesquall/tabula-rasa/agenix#encom"
+
+echo ""
+echo "afterward, you need to manually install the ssh keys used by agenix,"
+echo "or, re-key the secrets to the ssh keys of the new system."
