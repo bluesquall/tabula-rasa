@@ -31,14 +31,14 @@ else
   exit 1;
 fi
 
-echo "inspecting age private key at /tmp/key.txt"
-pubkey=$(age-keygen -y /tmp/key.txt)
-if [[ -z ${pubkey} ]]; then
-  echo "could not read age public key from /tmp/key.txt"
+if [[ -f "/tmp/ssh_host_ed25519_key" ]]; then
+  echo "sops-nix will use ed25519 host private key from /tmp"
+else
+  echo "please put a ed25519 host private key in /tmp"
+  echo "and make sure secrets.yaml has been encoded for the"
+  echo "corresponding public key"
   exit 1;
 fi
-# ^ this also checks that the key is present early
-echo "sops-nix will use age public key ${pubkey}"
 
 read -r -p "passphrase for LUKS encryption ~> " passphrase
 
@@ -82,14 +82,13 @@ mount -o subvol=persist,compress=zstd,noatime /dev/mapper/crypt /mnt/persist
 mount -o subvol=log,compress=zstd,noatime /dev/mapper/crypt /mnt/var/log
 mkdir -p /mnt/etc/nixos
 
-echo "generating host keys, because sops-nix hates missing them"
+echo "generating RSA host keys, because sops-nix hates missing them"
 mkdir -p /mnt/persist/etc/ssh
 ssh-keygen -q -t rsa -b 4096 -C "${hostname}" -N "" -f /mnt/persist/etc/ssh/ssh_host_rsa_key
-ssh-keygen -q -t ed25519 -C "${hostname}" -N "" -f /mnt/persist/etc/ssh/ssh_host_ed25519_key
-
-echo "moving /tmp/key.txt to /persist/etc/sops-nix/key.txt for sops-nix"
-mkdir -p /mnt/persist/etc/sops-nix
-mv /tmp/key.txt /mnt/persist/etc/sops-nix/
+echo "moving ed25519 host secret key from /tmp to persistent storage"
+echo "  so sops-nix can find and use it"
+mv /tmp/ssh_host_ed25519_key /mnt/persist/etc/ssh
+ssh-keygen -yf /mnt/persist/etc/ssh/ssh_host_ed25519_key > /mnt/persist/etc/ssh/ssh_host_ed25519_key.pub
 
 echo "running nixos-install"
 time nixos-install --flake ${url} --no-root-password
