@@ -31,6 +31,15 @@ else
   exit 1;
 fi
 
+echo "inspecting age private key at /tmp/keys.txt"
+pubkey=$(age-keygen -y /tmp/keys.txt)
+if [[ -z ${pubkey} ]]; then
+  echo "could not read age public key from /tmp/keys.txt"
+  exit 1;
+fi
+# ^ this also checks that the key is present early
+echo "sops-nix will use age public key ${pubkey}"
+
 if [[ -f "/tmp/ssh_host_ed25519_key" ]]; then
   echo "sops-nix will use ed25519 host private key from /tmp"
 else
@@ -39,6 +48,20 @@ else
   echo "corresponding public key"
   exit 1;
 fi
+echo "public key derived from ssh ed25519 host private key in /tmp:"
+ssh-keygen -yf /tmp/ssh_host_ed25519_key
+
+echo "corresponding age ed25519 public key:"
+nix-shell -p ssh-to-age --run 'ssh-keygen -yf /tmp/ssh_host_ed25519_key | ssh-to-age'
+
+echo "age ed25519 public keys specified by .sops.yaml:"
+grep age .sops.yaml
+echo "age ed25519 public keys available:"
+echo "${pubkey}"
+nix-shell -p ssh-to-age --run 'ssh-keygen -yf /tmp/ssh_host_ed25519_key | ssh-to-age'
+
+
+echo "TODO: automate verification that you have a matching pubkey"
 
 read -r -p "passphrase for LUKS encryption ~> " passphrase
 
@@ -80,15 +103,25 @@ mount -o subvol=home,compress=zstd,noatime /dev/mapper/crypt /mnt/home
 mount -o subvol=nix,compress=zstd,noatime /dev/mapper/crypt /mnt/nix
 mount -o subvol=persist,compress=zstd,noatime /dev/mapper/crypt /mnt/persist
 mount -o subvol=log,compress=zstd,noatime /dev/mapper/crypt /mnt/var/log
-mkdir -p /mnt/etc/nixos
 
-echo "generating RSA host keys, because sops-nix hates missing them"
-mkdir -p /mnt/persist/etc/ssh
-ssh-keygen -q -t rsa -b 4096 -C "${hostname}" -N "" -f /mnt/persist/etc/ssh/ssh_host_rsa_key
-echo "moving ed25519 host secret key from /tmp to persistent storage"
+echo "generating ssh RSA host keys, because sops-nix hates missing them"
+mkdir -p /mnt/etc/ssh
+ssh-keygen -q -t rsa -b 4096 -C "${hostname}" -N "" -f /mnt/etc/ssh/ssh_host_rsa_key
+echo "moving ssh ed25519 host secret key from /tmp to /etc/ssh"
 echo "  so sops-nix can find and use it"
-mv /tmp/ssh_host_ed25519_key /mnt/persist/etc/ssh
-ssh-keygen -yf /mnt/persist/etc/ssh/ssh_host_ed25519_key > /mnt/persist/etc/ssh/ssh_host_ed25519_key.pub
+mv /tmp/ssh_host_ed25519_key /mnt/etc/ssh
+ssh-keygen -yf /mnt/etc/ssh/ssh_host_ed25519_key > /mnt/etc/ssh/ssh_host_ed25519_key.pub
+echo "ssh ed25519 host public key in /etc/ssh:"
+cat /mnt/etc/ssh/ssh_host_ed25519_key.pub
+echo "corresponding age ed25519 public key:"
+nix-shell -p ssh-to-age --run 'ssh-keygen -yf /mnt/etc/ssh/ssh_host_ed25519_key | ssh-to-age'
+
+echo "moving /tmp/keys.txt to /var/lib/sops-nix/keys.txt for sops-nix"
+mkdir -p /mnt/var/lib/sops-nix
+mv /tmp/keys.txt /mnt/var/lib/sops-nix/
+
+echo "taking a read-only snapshot of root with sops keys"
+btrfs subvolume snapshot -r /mnt/root /mnt/root-keyed
 
 echo "running nixos-install"
 time nixos-install --flake ${url} --no-root-password

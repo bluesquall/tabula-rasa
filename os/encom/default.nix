@@ -15,17 +15,16 @@ in
     machine-id.source = "/persist/etc/machine-id";
     # nixos.source = "/persist/etc/nixos";
     # ^ don't need this if you are always installing from a flake
-    sops-nix.source = "/persist/etc/sops-nix";
   };
   services.openssh = {
     enable = true;
     hostKeys = [
       {
-        path = "/persist/etc/ssh/ssh_host_ed25519_key";
+        path = "/etc/ssh/ssh_host_ed25519_key";
         type = "ed25519";
       }
       {
-        path = "/persist/etc/ssh/ssh_host_rsa_key";
+        path = "/etc/ssh/ssh_host_rsa_key";
         type = "rsa";
         bits = 4096;
       }
@@ -35,9 +34,9 @@ in
 
   sops = {
     defaultSopsFile = ./secrets.yaml;
-    age.keyFile = "/etc/sops-nix/key.txt";
+    age.keyFile = "/var/lib/sops-nix/keys.txt";
     # ^ this needs to be on the root volume, not another subvolume
-    # age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+    age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
     # ^ this would be if the secret was encoded to the host ssh key
     # ^ and it looks like sops-nix always checks for it there anyway
     # secrets.hashedPassword.neededForUsers = true;
