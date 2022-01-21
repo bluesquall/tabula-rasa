@@ -8,12 +8,12 @@ in
   imports = [
     ../filesystems.nix
     (modulesPath + "/installer/scan/not-detected.nix")
-    <sops-nix/modules/sops>
   ];
 
   sops = {
     defaultSopsFile = ./secrets.yaml;
-    age.keyFile = "/persist/.key/sops-nix/key.txt";
+    age.keyFile = "/var/lib/sops-nix/key.txt";
+    # ^ this needs to be on the root volume, not another subvolume
     # age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
     # ^ this would be if the secret was encoded to the host ssh key
     # secrets.hashedPassword.neededForUsers = true;

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+hostname="encom"
+flake="github:bluesquall/tabula-rasa/sops-nix#${hostname}"
+
 usage() {
   echo "please specify the drive to prepare for NixOS (e.g., /dev/nvme0n1)";
 }
@@ -11,9 +14,6 @@ else
   usage;
   exit 1;
 fi
-
-echo "set password for user:"
-echo "$(mkpasswd -m sha512crypt)" > /tmp/passwd.sha512crypt
 
 echo "preparing drive ${drive} for NixOS"
 echo ""
@@ -55,13 +55,16 @@ mount -o subvol=persist,compress=zstd,noatime /dev/mapper/crypt /mnt/persist
 mount -o subvol=log,compress=zstd,noatime /dev/mapper/crypt /mnt/var/log
 mkdir -p /mnt/etc/nixos
 
-mkdir -p /mnt/home/.keys
-mv /tmp/passwd.sha512crypt /mnt/home/.keys
-chmod 700 /mnt/home/.keys
-chmod 600 /mnt/home/.keys/passwd.sha512crypt
+echo "generating host keys, because sops-nix hates missing them"
+mkdir -p /mnt/etc/ssh
+ssh-keygen -t rsa -b 4096 -C "${hostname}" -N "" -f /mnt/etc/ssh/ssh_host_rsa_key
+ssh-keygen -t ed25519 -C "${hostname}" -N "" -f /mnt/etc/ssh/ssh_host_ed25519_key
 
-echo "prepared ${drive} for NixOS"
-echo "your next step is  to install your system from a flake, e.g.:"
-echo "  time nixos-install --flake .#encom --no-root-password"
-echo "or"
-echo "  nixos-install --flake github:bluesquall/tabula-rasa#encom"
+echo "moving /tmp/key.txt to /var/lib/sops-nix/key.txt for sops-nix"
+mkdir -p /mnt/var/lib/sops-nix
+mv /tmp/key.txt /mnt/var/lib/sops-nix/
+
+echo "running nixos-install"
+time nixos-install --flake ${flake} --no-root-password
+
+echo "IFF you did not see any errors, reboot and enjoy!"
