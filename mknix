@@ -28,6 +28,10 @@ else
   exit 1;
 fi
 
+echo "inspecting age private key at /tmp/key.txt"
+echo "sops-nix will use age public key $(age-keygen -y /tmp/key.txt)"
+# ^ this also checks that the key is present early
+
 read -r -p "passphrase for LUKS encryption ~> " passphrase
 
 echo "preparing drive ${drive} for NixOS"
@@ -71,13 +75,13 @@ mount -o subvol=log,compress=zstd,noatime /dev/mapper/crypt /mnt/var/log
 mkdir -p /mnt/etc/nixos
 
 echo "generating host keys, because sops-nix hates missing them"
-mkdir -p /mnt/etc/ssh
-ssh-keygen -q -t rsa -b 4096 -C "${hostname}" -N "" -f /mnt/etc/ssh/ssh_host_rsa_key
-ssh-keygen -q -t ed25519 -C "${hostname}" -N "" -f /mnt/etc/ssh/ssh_host_ed25519_key
+mkdir -p /mnt/persist/etc/ssh
+ssh-keygen -q -t rsa -b 4096 -C "${hostname}" -N "" -f /mnt/persist/etc/ssh/ssh_host_rsa_key
+ssh-keygen -q -t ed25519 -C "${hostname}" -N "" -f /mnt/persist/etc/ssh/ssh_host_ed25519_key
 
-echo "moving /tmp/key.txt to /var/lib/sops-nix/key.txt for sops-nix"
-mkdir -p /mnt/var/lib/sops-nix
-mv /tmp/key.txt /mnt/var/lib/sops-nix/
+echo "moving /tmp/key.txt to /etc/sops-nix/key.txt for sops-nix"
+mkdir -p /mnt/persist/var/lib/sops-nix
+mv /tmp/key.txt /mnt/persist/var/lib/sops-nix/
 
 echo "running nixos-install"
 time nixos-install --flake ${url} --no-root-password

@@ -10,12 +10,37 @@ in
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
 
+  # set up links from `/persist` for darling erasure
+  environment.etc = {
+    machine-id.source = "/persist/etc/machine-id";
+    nixos.source = "/persist/etc/nixos";
+  };
+  systemd.tmpfiles.rules = [
+    "L /var/lib/sops-nix - - - - /persist/var/lib/sops-nix"
+  ];
+  services.openssh = {
+    enable = true;
+    hostKeys = [
+      {
+        path = "/persist/ssh/ssh_host_ed25519_key";
+        type = "ed25519";
+      }
+      {
+        path = "/persist/ssh/ssh_host_rsa_key";
+        type = "rsa";
+        bits = 4096;
+      }
+    ];
+  };
+
+
   sops = {
     defaultSopsFile = ./secrets.yaml;
     age.keyFile = "/var/lib/sops-nix/key.txt";
     # ^ this needs to be on the root volume, not another subvolume
     # age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
     # ^ this would be if the secret was encoded to the host ssh key
+    # ^ and it looks like sops-nix always checks for it there anyway
     # secrets.hashedPassword.neededForUsers = true;
     # ^ this is in user/flynn/default.nix, but could be here instead
   };
@@ -52,7 +77,6 @@ in
   i18n.defaultLocale = "en_US.UTF-8";
 
   services = {
-    openssh.enable = true;
     xserver = {
       enable = true;
       dpi = 180;
@@ -77,6 +101,6 @@ in
     mutableUsers = false;
     users.root.hashedPassword= "!"; # < disable password login for root
   };
-  
+
   system.stateVersion = "22.05";
 }
