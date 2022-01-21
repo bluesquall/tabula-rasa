@@ -37,7 +37,7 @@
         };
 
         environment.systemPackages = with pkgs; [
-	  bash curl git neovim qrencode tmux zsh
+	  bash curl git neovim tmux zsh
         ];
       })
     ];
