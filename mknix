@@ -1,12 +1,25 @@
 #!/usr/bin/env bash
 set -e
 
-hostname="encom"
-flake="github:bluesquall/tabula-rasa/sops-nix#${hostname}"
+url="github:bluesquall/tabula-rasa/sops-nix#encom"
 
 usage() {
   echo "please specify the drive to prepare for NixOS (e.g., /dev/nvme0n1)";
 }
+
+while [[ $# -gt 1 ]]; do
+  case "$1" in
+    -u | --url )
+      shift
+      url="$1"
+      host=$(echo ${url} | cut -d "#" -f 2)
+      ;;
+    *)
+      usage;
+      exit 1;
+  esac
+  shift
+done
 
 if [[ $# == 1 ]]; then
   drive="$1";
@@ -14,6 +27,8 @@ else
   usage;
   exit 1;
 fi
+
+read -r -p "passphrase for LUKS encryption ~> " passphrase
 
 echo "preparing drive ${drive} for NixOS"
 echo ""
@@ -30,8 +45,8 @@ sgdisk --new 2:2048001: --typecode 2:8309 --change-name 2:luks ${drive}
 sgdisk --print ${drive}
 partprobe ${drive}; sleep 2
 mkfs.vfat -n EFI /dev/disk/by-partlabel/EFI
-cryptsetup -v luksFormat /dev/disk/by-partlabel/luks
-cryptsetup open /dev/disk/by-partlabel/luks crypt
+echo ${passphrase} | cryptsetup -q luksFormat /dev/disk/by-partlabel/luks
+echo ${passphrase} | cryptsetup open /dev/disk/by-partlabel/luks crypt
 mkfs.btrfs -f /dev/mapper/crypt
 mount -t btrfs /dev/mapper/crypt /mnt
 btrfs subvolume create /mnt/root
@@ -57,14 +72,18 @@ mkdir -p /mnt/etc/nixos
 
 echo "generating host keys, because sops-nix hates missing them"
 mkdir -p /mnt/etc/ssh
-ssh-keygen -t rsa -b 4096 -C "${hostname}" -N "" -f /mnt/etc/ssh/ssh_host_rsa_key
-ssh-keygen -t ed25519 -C "${hostname}" -N "" -f /mnt/etc/ssh/ssh_host_ed25519_key
+ssh-keygen -q -t rsa -b 4096 -C "${hostname}" -N "" -f /mnt/etc/ssh/ssh_host_rsa_key
+ssh-keygen -q -t ed25519 -C "${hostname}" -N "" -f /mnt/etc/ssh/ssh_host_ed25519_key
 
 echo "moving /tmp/key.txt to /var/lib/sops-nix/key.txt for sops-nix"
 mkdir -p /mnt/var/lib/sops-nix
 mv /tmp/key.txt /mnt/var/lib/sops-nix/
 
 echo "running nixos-install"
-time nixos-install --flake ${flake} --no-root-password
+time nixos-install --flake ${url} --no-root-password
 
+umount -R /mnt
+cryptsetup close crypt
+
+echo ""
 echo "IFF you did not see any errors, reboot and enjoy!"

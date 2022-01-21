@@ -56,7 +56,7 @@ you can install it on a non-NixOS sytstem (e.g., Ubuntu with nix & flakes).
 
     - [ ] and a derivative example using `ragenix`
 
-  - [ ] provide an example using `nix-sops`
+  - [x] provide an example using `nix-sops`
 
 ### shell
 
