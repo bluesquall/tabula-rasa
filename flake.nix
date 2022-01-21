@@ -9,9 +9,14 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { nixpkgs, home-manager, ... }:
+  outputs = { self, nixpkgs, home-manager, sops-nix, ... }:
   let
 
     lib = nixpkgs.lib;
@@ -24,6 +29,7 @@
     };
 
     baseModules = [
+      sops-nix.nixosModules.sops
       ({ lib, pkgs, ... }: {
         nix = {
           package = pkgs.nixUnstable;

@@ -9,6 +9,10 @@ a flaky example of NixOS configuration with full-disk encryption, home-manager, 
 
    `nix build .#nixosConfigurations.iso.config.system.build.isoImage`
 
+    or
+
+   `nix build github:bluesquall/tabula-rasa/sops-nix#nixosConfigurations.iso.config.system.build.isoImage`
+
 1. boot into the [NixOS] live system
 
    - connect to your WiFi network:
@@ -19,7 +23,7 @@ a flaky example of NixOS configuration with full-disk encryption, home-manager, 
 
 3. install NixOS directly from the remote:
 
-      `nixos-install --flake github:bluesquall/tabula-rasa#encom`
+      `nixos-install --flake github:bluesquall/tabula-rasa/sops-nix#encom`
 
    or by cloning this repo, modifying accordingly, and installing from the
    local clone:
