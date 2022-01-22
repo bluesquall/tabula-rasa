@@ -121,7 +121,25 @@ mkdir -p /mnt/var/lib/sops-nix
 mv /tmp/keys.txt /mnt/var/lib/sops-nix/
 
 echo "taking a read-only snapshot of root with sops keys"
+# btrfs subvolume snapshot -r /mnt /root-keyed
+# TODO re-order some of the mounting
+umount -R /mnt
+mount -t btrfs /dev/mapper/crypt /mnt
 btrfs subvolume snapshot -r /mnt/root /mnt/root-keyed
+umount -R /mnt
+
+mount -o subvol=root,compress=zstd,noatime /dev/mapper/crypt /mnt
+mount /dev/disk/by-partlabel/EFI /mnt/boot
+mount -o subvol=home,compress=zstd,noatime /dev/mapper/crypt /mnt/home
+mount -o subvol=nix,compress=zstd,noatime /dev/mapper/crypt /mnt/nix
+mount -o subvol=persist,compress=zstd,noatime /dev/mapper/crypt /mnt/persist
+mount -o subvol=log,compress=zstd,noatime /dev/mapper/crypt /mnt/var/log
+
+# TODO show the diff between root-blank and root-keyed here
+
+echo "age ed25519 public keys available:"
+age-keygen -y /mnt/var/lib/sops-nix/keys.txt
+nix-shell -p ssh-to-age --run 'ssh-keygen -yf /mnt/etc/ssh/ssh_host_ed25519_key | ssh-to-age'
 
 echo "running nixos-install"
 time nixos-install --flake ${url} --no-root-password
