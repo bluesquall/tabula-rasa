@@ -12,7 +12,9 @@ in
 
   # set up links from `/persist` for darling erasure
   environment.etc = {
-    machine-id.source = "/persist/etc/machine-id";
+    # machine-id.source = "/persist/etc/machine-id";
+    # ^ you need to bootstrap this if you want to install a flake
+    #   on a fresh system...
     # nixos.source = "/persist/etc/nixos";
     # ^ don't need this if you are always installing from a flake
   };
