@@ -6,37 +6,13 @@ let
 in
 {
   imports = [
-    ../filesystems.nix
     (modulesPath + "/installer/scan/not-detected.nix")
+    ../filesystems.nix
   ];
-
-  # set up links from `/persist` for darling erasure
-  environment.etc = {
-    # machine-id.source = "/persist/etc/machine-id";
-    # ^ you need to bootstrap this if you want to install a flake
-    #   on a fresh system...
-    # nixos.source = "/persist/etc/nixos";
-    # ^ don't need this if you are always installing from a flake
-  };
-  services.openssh = {
-    enable = true;
-    hostKeys = [
-      {
-        path = "/etc/ssh/ssh_host_ed25519_key";
-        type = "ed25519";
-      }
-      {
-        path = "/etc/ssh/ssh_host_rsa_key";
-        type = "rsa";
-        bits = 4096;
-      }
-    ];
-  };
-
 
   sops = {
     defaultSopsFile = ./secrets.yaml;
-    age.keyFile = "/var/lib/sops-nix/keys.txt";
+    # age.keyFile = "/var/lib/sops-nix/keys.txt";
     # ^ this needs to be on the root volume, not another subvolume
     age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
     # ^ this would be if the secret was encoded to the host ssh key

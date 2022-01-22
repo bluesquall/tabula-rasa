@@ -31,15 +31,6 @@ else
   exit 1;
 fi
 
-echo "inspecting age private key at /tmp/keys.txt"
-pubkey=$(age-keygen -y /tmp/keys.txt)
-if [[ -z ${pubkey} ]]; then
-  echo "could not read age public key from /tmp/keys.txt"
-  exit 1;
-fi
-# ^ this also checks that the key is present early
-echo "sops-nix will use age public key ${pubkey}"
-
 if [[ -f "/tmp/ssh_host_ed25519_key" ]]; then
   echo "sops-nix will use ed25519 host private key from /tmp"
 else
@@ -48,22 +39,18 @@ else
   echo "corresponding public key"
   exit 1;
 fi
-echo "public key derived from ssh ed25519 host private key in /tmp:"
-ssh-keygen -yf /tmp/ssh_host_ed25519_key
 
-echo "corresponding age ed25519 public key:"
-nix-shell -p ssh-to-age --run 'ssh-keygen -yf /tmp/ssh_host_ed25519_key | ssh-to-age'
-
-echo "age ed25519 public keys specified by .sops.yaml:"
-grep age .sops.yaml
-echo "age ed25519 public keys available:"
-echo "${pubkey}"
-nix-shell -p ssh-to-age --run 'ssh-keygen -yf /tmp/ssh_host_ed25519_key | ssh-to-age'
+agepubkey=$(nix-shell -p ssh-to-age --run 'ssh-keygen -yf /tmp/ssh_host_ed25519_key | ssh-to-age')
+echo "age ed25519 public key: ${agepubkey}"
+#if [[ ! grep ${agepubkey} .sops.yaml ]]; then
+#  echo ".sops.yaml does not specify your pubkey"
+#  echo "please re-key your secrets"
+#  exit 1;
+#fi
+# TODO ^ handle for remote URL when we don't have .sops.yaml yet
 
 
-echo "TODO: automate verification that you have a matching pubkey"
-
-read -r -p "passphrase for LUKS encryption ~> " passphrase
+read -s -r -p "passphrase for LUKS encryption ~> " passphrase
 
 echo "preparing drive ${drive} for NixOS"
 echo ""
@@ -79,30 +66,27 @@ sgdisk --new 1:4096:2048000 --typecode 1:ef00 --change-name 1:EFI ${drive}
 sgdisk --new 2:2048001: --typecode 2:8309 --change-name 2:luks ${drive}
 sgdisk --print ${drive}
 partprobe ${drive}; sleep 2
+
 mkfs.vfat -n EFI /dev/disk/by-partlabel/EFI
+
 echo ${passphrase} | cryptsetup -q luksFormat /dev/disk/by-partlabel/luks
 echo ${passphrase} | cryptsetup open /dev/disk/by-partlabel/luks crypt
 mkfs.btrfs -f /dev/mapper/crypt
 mount -t btrfs /dev/mapper/crypt /mnt
 btrfs subvolume create /mnt/root
+btrfs subvolume snapshot -r /mnt/root /mnt/root-blank
 btrfs subvolume create /mnt/home
 btrfs subvolume create /mnt/nix
 btrfs subvolume create /mnt/persist
 btrfs subvolume create /mnt/log
 btrfs subvolume create /mnt/swap
-btrfs subvolume snapshot -r /mnt/root /mnt/root-blank
 umount /mnt
 mount -o subvol=root,compress=zstd,noatime /dev/mapper/crypt /mnt
 mkdir -p /mnt/boot
-mount /dev/disk/by-partlabel/EFI /mnt/boot
 mkdir -p /mnt/home
 mkdir -p /mnt/nix
 mkdir -p /mnt/persist
 mkdir -p /mnt/var/log
-mount -o subvol=home,compress=zstd,noatime /dev/mapper/crypt /mnt/home
-mount -o subvol=nix,compress=zstd,noatime /dev/mapper/crypt /mnt/nix
-mount -o subvol=persist,compress=zstd,noatime /dev/mapper/crypt /mnt/persist
-mount -o subvol=log,compress=zstd,noatime /dev/mapper/crypt /mnt/var/log
 
 echo "generating ssh RSA host keys, because sops-nix hates missing them"
 mkdir -p /mnt/etc/ssh
@@ -116,18 +100,15 @@ cat /mnt/etc/ssh/ssh_host_ed25519_key.pub
 echo "corresponding age ed25519 public key:"
 nix-shell -p ssh-to-age --run 'ssh-keygen -yf /mnt/etc/ssh/ssh_host_ed25519_key | ssh-to-age'
 
-echo "moving /tmp/keys.txt to /var/lib/sops-nix/keys.txt for sops-nix"
-mkdir -p /mnt/var/lib/sops-nix
-mv /tmp/keys.txt /mnt/var/lib/sops-nix/
-
 echo "taking a read-only snapshot of root with sops keys"
-# btrfs subvolume snapshot -r /mnt /root-keyed
-# TODO re-order some of the mounting
 umount -R /mnt
 mount -t btrfs /dev/mapper/crypt /mnt
 btrfs subvolume snapshot -r /mnt/root /mnt/root-keyed
 umount -R /mnt
+# TODO there's probably a way to snapshot without remounting
+# TODO show the diff between root-blank and root-keyed here
 
+echo "mounting subvolumes"
 mount -o subvol=root,compress=zstd,noatime /dev/mapper/crypt /mnt
 mount /dev/disk/by-partlabel/EFI /mnt/boot
 mount -o subvol=home,compress=zstd,noatime /dev/mapper/crypt /mnt/home
@@ -135,10 +116,7 @@ mount -o subvol=nix,compress=zstd,noatime /dev/mapper/crypt /mnt/nix
 mount -o subvol=persist,compress=zstd,noatime /dev/mapper/crypt /mnt/persist
 mount -o subvol=log,compress=zstd,noatime /dev/mapper/crypt /mnt/var/log
 
-# TODO show the diff between root-blank and root-keyed here
-
-echo "age ed25519 public keys available:"
-age-keygen -y /mnt/var/lib/sops-nix/keys.txt
+echo "age ed25519 public key from /etc/ssh/ssh_host_ed25519_key:"
 nix-shell -p ssh-to-age --run 'ssh-keygen -yf /mnt/etc/ssh/ssh_host_ed25519_key | ssh-to-age'
 
 echo "running nixos-install"
