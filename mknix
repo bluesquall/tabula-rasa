@@ -50,7 +50,7 @@ echo "age ed25519 public key: ${agepubkey}"
 # TODO ^ handle for remote URL when we don't have .sops.yaml yet
 
 
-read -s -r -p "passphrase for LUKS encryption ~> " passphrase
+# read -s -r -p "passphrase for disk encryption ~> " passphrase
 
 echo "preparing drive ${drive} for NixOS"
 echo ""
@@ -62,32 +62,19 @@ read -r -p "type ${drive} to confirm and overwrite partitions ~> " confirm
 if [[ ! ${confirm} == ${drive} ]]; then exit 1; fi
 
 sgdisk --clear ${drive}
-sgdisk --new 1:4096:2048000 --typecode 1:ef00 --change-name 1:EFI ${drive}
-sgdisk --new 2:2048001: --typecode 2:8309 --change-name 2:luks ${drive}
+sgdisk --new 1:4096:1024000 --typecode 1:ef00 --change-name 1:EFI ${drive}
+sgdisk --new 2:1024001: --typecode 2:8309 --change-name 2:ZED ${drive}
 sgdisk --print ${drive}
 partprobe ${drive}; sleep 2
 
 mkfs.vfat -n EFI /dev/disk/by-partlabel/EFI
 
-echo ${passphrase} | cryptsetup -q luksFormat /dev/disk/by-partlabel/luks
-echo ${passphrase} | cryptsetup open /dev/disk/by-partlabel/luks crypt
-mkfs.btrfs -f /dev/mapper/crypt
-mount -t btrfs /dev/mapper/crypt /mnt
-btrfs subvolume create /mnt/root
-btrfs subvolume snapshot -r /mnt/root /mnt/root-blank
-btrfs subvolume create /mnt/home
-btrfs subvolume create /mnt/nix
-btrfs subvolume create /mnt/persist
-btrfs subvolume create /mnt/log
-btrfs subvolume create /mnt/swap
-umount /mnt
-mount -o subvol=root,compress=zstd,noatime /dev/mapper/crypt /mnt
-mkdir -p /mnt/boot
-mkdir -p /mnt/home
-mkdir -p /mnt/nix
-mkdir -p /mnt/persist
-mkdir -p /mnt/var/log
+zpool create -f -O atime=off -O snapdir=visible -O xattr=sa -O acltype=posixacl -O compression=lz4 -O encryption=aes-256-gcm -O keylocation=prompt -O keyformat=passphrase -o ashift=12 -o altroot=/mnt rpool /dev/disk/by-partlabel/ZED
+zfs create -p -o reservation=1G -o mountpoint=none rpool/reserved # ZFS is copy-on-write
+zfs create -p -o mountpoint=legacy rpool/transient/root
+zfs snapshot rpool/transient/root@blank
 
+mount -t zfs rpool/transient/root /mnt
 echo "generating ssh RSA host keys, because sops-nix hates missing them"
 mkdir -p /mnt/etc/ssh
 ssh-keygen -q -t rsa -b 4096 -C "${hostname}" -N "" -f /mnt/etc/ssh/ssh_host_rsa_key
@@ -99,22 +86,30 @@ echo "ssh ed25519 host public key in /etc/ssh:"
 cat /mnt/etc/ssh/ssh_host_ed25519_key.pub
 echo "corresponding age ed25519 public key:"
 nix-shell -p ssh-to-age --run 'ssh-keygen -yf /mnt/etc/ssh/ssh_host_ed25519_key | ssh-to-age'
+echo "taking a snapshot of root ready to bootstrap"
+zfs snapshot rpool/transient/root@strap
 
-echo "taking a read-only snapshot of root with sops keys"
-umount -R /mnt
-mount -t btrfs /dev/mapper/crypt /mnt
-btrfs subvolume snapshot -r /mnt/root /mnt/root-keyed
-umount -R /mnt
-# TODO there's probably a way to snapshot without remounting
-# TODO show the diff between root-blank and root-keyed here
+zfs diff rpool/transient/root@blank rpool/transient/root@strap
 
-echo "mounting subvolumes"
-mount -o subvol=root,compress=zstd,noatime /dev/mapper/crypt /mnt
+mkdir -p /mnt/boot
 mount /dev/disk/by-partlabel/EFI /mnt/boot
-mount -o subvol=home,compress=zstd,noatime /dev/mapper/crypt /mnt/home
-mount -o subvol=nix,compress=zstd,noatime /dev/mapper/crypt /mnt/nix
-mount -o subvol=persist,compress=zstd,noatime /dev/mapper/crypt /mnt/persist
-mount -o subvol=log,compress=zstd,noatime /dev/mapper/crypt /mnt/var/log
+
+zfs create -p -o mountpoint=legacy rpool/transient/nix
+zfs snapshot rpool/transient/nix@blank
+mkdir -p /mnt/nix
+mount -t zfs rpool/transient/nix /mnt/nix
+
+zfs create -p -o copies=2 -o mountpoint=legacy rpool/persistent/home
+zfs snapshot rpool/persistent/home@blank
+mkdir -p /mnt/home
+mount -t zfs rpool/persistent/home /mnt/home
+
+# zfs create -o compression=off -V 4G rpool/swap
+# mkswap -L SWAP /dev/zvol/rpool/swap
+
+zpool set bootfs=rpool/transient/root rpool # < set boot fs:
+
+#TODO add auto-snapshots of /home
 
 echo "age ed25519 public key from /etc/ssh/ssh_host_ed25519_key:"
 nix-shell -p ssh-to-age --run 'ssh-keygen -yf /mnt/etc/ssh/ssh_host_ed25519_key | ssh-to-age'
@@ -122,8 +117,9 @@ nix-shell -p ssh-to-age --run 'ssh-keygen -yf /mnt/etc/ssh/ssh_host_ed25519_key 
 echo "running nixos-install"
 time nixos-install --flake ${url} --no-root-password
 
+zpool export rpool
+
 umount -R /mnt
-cryptsetup close crypt
 
 echo ""
 echo "IFF you did not see any errors, reboot and enjoy!"
