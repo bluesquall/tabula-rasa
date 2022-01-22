@@ -33,8 +33,7 @@ in
 
   boot = {
     kernelModules = [ "kvm-intel" ];
-    kernelPackages = pkgs.linuxPackages_latest;
-    supportedFilesystems = [ "btrfs" ];
+    kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
     loader = {
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
@@ -43,6 +42,7 @@ in
 
   networking = {
     hostName = HOSTNAME;
+    hostId = "DEADBEEF";
     useDHCP = false;
     networkmanager.enable = true;
     firewall.enable = false;

@@ -1,19 +1,24 @@
 #filesystems.nix
 
-# { config, lib, pkgs, modulesPath, ... }:
+{ config, lib, pkgs, modulesPath, ... }:
 
 {
 
+  boot.kernelParams = [ "nohibernate" ];
   boot.initrd = {
     availableKernelModules = [ "xhci_pci" "nvme" "usbhid" "usb_storage" "sd_mod" "rtsx_pci_sdmmc" ];
-    luks.devices."crypt".device = "/dev/disk/by-partlabel/luks";
+    postDeviceCommands = lib.mkAfter ''
+      zfs rollback -r rpool/transient/root@strap
+    '';
+    supportedFilesystems = [ "zfs" ];
   };
+  boot.supportedFilesystems = [ "zfs" ];
+  boot.zfs.enableUnstable = true;
 
   fileSystems = {
     "/" = { 
-      device = "/dev/disk/by-id/dm-name-crypt";
-      fsType = "btrfs";
-      options = [ "subvol=root" "compress=zstd" "noatime" ];
+      device = "rpool/transient/root";
+      fsType = "zfs";
       neededForBoot = true;
     };
     "/boot" = {
@@ -22,26 +27,12 @@
       neededForBoot = true;
     };
     "/home" = {
-      device = "/dev/disk/by-id/dm-name-crypt";
-      fsType = "btrfs";
-      options = [ "subvol=home" "compress=zstd" "noatime" ];
-      neededForBoot = true;
+      device = "rpool/persistent/home";
+      fsType = "zfs";
     };
     "/nix" = {
-      device = "/dev/disk/by-id/dm-name-crypt";
-      fsType = "btrfs";
-      options = [ "subvol=nix" "compress=zstd" "noatime" ];
-    };
-    "/persist" = {
-      device = "/dev/disk/by-id/dm-name-crypt";
-      fsType = "btrfs";
-      options = [ "subvol=persist" "compress=zstd" "noatime" ];
-    };
-    "/var/log" = {
-      device = "/dev/disk/by-id/dm-name-crypt";
-      fsType = "btrfs";
-      options = [ "subvol=log" "compress=zstd" "noatime" ];
-      neededForBoot = true;
+      device = "rpool/transient/nix";
+      fsType = "zfs";
     };
   };
 
