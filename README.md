@@ -9,6 +9,10 @@ a flaky example of NixOS configuration with full-disk encryption, home-manager, 
 
    `nix build .#nixosConfigurations.iso.config.system.build.isoImage --impure`
 
+   or
+
+   `nix build github:bluesquall/tabula-rasa/ragenix#nixosConfigurations.iso.config.system.build.isoImage` --impure
+
 1. boot into the [NixOS] live system
 
    - connect to your WiFi network:
@@ -48,11 +52,11 @@ you can install it on a non-NixOS sytstem (e.g., Ubuntu with nix & flakes).
 
   - [x] implement a simple secure example using out-of-band storage
 
-  - [ ] provide an example using `agenix`
+  - [x] provide an example using `agenix`
 
-    - [ ] and a derivative example using `ragenix`
+    - [x] and a derivative example using `ragenix`
 
-  - [ ] provide an example using `nix-sops`
+  - [x] provide an example using `nix-sops`
 
 ### shell
 
