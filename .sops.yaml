@@ -1,6 +1,6 @@
 keys:
   - &admin_flynn age1h0jrdml46t6y40lp074ul7gp2m8nj9nndtfz2d7g3c5zln4hharqja8wdh 
-  - &server_encom age18cw8822esr98vcc6txp2tuty934f7ar730e4h9dncl47kdg83gjq4wjd2t
+  - &server_encom age1reacmvjlnhkqc8ugegxmwzu8agalzdxtz9g8vd72tqfyts08jyuq762x60
 creation_rules:
   - path_regex: secrets.yaml$
     key_groups:
