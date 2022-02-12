@@ -7,7 +7,6 @@ in
 {
   imports = [
     ../filesystems.nix
-    (modulesPath + "/installer/scan/not-detected.nix")
   ];
 
   services.openssh = {
@@ -28,6 +27,7 @@ in
   hardware = {
     # enableAllFirmware = true;
     cpu.intel.updateMicrocode = true;
+    enableRedistributableFirmware = lib.mkDefault true;
     opengl = {
       driSupport = true;
       driSupport32Bit = true;

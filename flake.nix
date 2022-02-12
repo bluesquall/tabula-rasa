@@ -5,7 +5,7 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    agenix.url = "github:ryantm/agenix";
+    agenix.url = "github:yaxitech/ragenix";
     agenix.inputs.nixpkgs.follows = "nixpkgs";
 
     home-manager = {
@@ -32,7 +32,8 @@
       ({ lib, pkgs, ... }: {
         nix = {
           package = pkgs.nixUnstable;
-          extraOptions = "experimental-features = nix-command flakes";
+          extraOptions = "experimental-features = nix-command flakes recursive-nix";
+          systemFeatures = [ "recursive-nix" ];
         };
 
         networking = {
