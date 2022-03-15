@@ -75,7 +75,7 @@ in
     };
   };
 
-  environment.systemPackages = with pkgs; [ bash curl git xterm zsh ];
+  environment.systemPackages = with pkgs; [ bash cryptsetup curl git libqrencode xterm zsh ];
 
   users = {
     mutableUsers = false;
