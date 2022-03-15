@@ -23,8 +23,7 @@
 
     pkgs = import nixpkgs {
       inherit system overlays;
-#        config.allowUnfree = true;
-#        # ^enable this if you need all firmware
+      config.allowUnfree = true;
     };
 
     baseModules = [

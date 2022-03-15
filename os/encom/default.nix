@@ -24,8 +24,10 @@ in
     ];
   };
 
+  nixpkgs.config.allowUnfree = true;
+
   hardware = {
-    # enableAllFirmware = true;
+    enableAllFirmware = true;
     cpu.intel.updateMicrocode = true;
     enableRedistributableFirmware = lib.mkDefault true;
     opengl = {
@@ -33,6 +35,19 @@ in
       driSupport32Bit = true;
     };
     video.hidpi.enable = lib.mkDefault true;
+    bluetooth = {
+      enable = true;
+      settings = {
+        General = {
+          Enable = "Source,Sink,Media,Socket";
+        };
+      };
+    };
+    pulseaudio = {
+      enable = true;
+      package = pkgs.pulseaudioFull;
+      extraModules = [ pkgs.pulseaudio-modules-bt ];
+    };
   };
 
   boot = {
@@ -74,6 +89,8 @@ in
       };
     };
   };
+
+  sound.enable = true;
 
   environment.systemPackages = with pkgs; [ bash cryptsetup curl git libqrencode xterm zsh ];
 
