@@ -29,7 +29,7 @@ a flaky example of NixOS configuration with full-disk encryption, home-manager, 
   
   or download just the `mknix` script:
   
-  `curl -#SLO …`
+  `curl -#SLO https://raw.githubusercontent.com/bluesquall/tabula-rasa/ragenix/mknix`
 
 4. run the script to partition and format your disks, then install NixOS
 
