@@ -1,8 +1,16 @@
 { pkgs, ... }:
 
+let
+  USERNAME = "flynn";
+  UID = 4983;
+in
 {
   programs.home-manager.enable = true;
   home = {
+    username = "${USERNAME}";
+    homeDirectory = "/home/${USERNAME}";
+    stateVersion = "22.11";
+
     sessionVariables = {
       PAGER = "less";
       EDITOR = "nvim";
