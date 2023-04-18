@@ -99,5 +99,5 @@ in
     users.root.hashedPassword= "!"; # < disable password login for root
   };
 
-  system.stateVersion = "22.05";
+  system.stateVersion = "22.11";
 }
