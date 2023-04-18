@@ -19,18 +19,23 @@ a flaky example of NixOS configuration with full-disk encryption, home-manager, 
 
      `nmcli device wifi connect <SSID> --ask`
 
-2. partition and format your disks (see [preinstall])
+2. download the host keys to `/tmp`:
 
-3. install NixOS directly from the remote:
+  `curl -#SLO …`
 
-      `nixos-install --flake github:bluesquall/tabula-rasa/ragenix#encom`
+3. clone this repo:
 
-   or by cloning this repo, modifying accordingly, and installing from the
-   local clone:
+  `git clone https://github.com/bluesquall/tabula-rasa.git`
+  
+  or download just the `mknix` script:
+  
+  `curl -#SLO …`
 
-      `nixos-install --flake .#encom`
+4. run the script to partition and format your disks, then install NixOS
 
-4. reboot
+  `sh ./mknix /dev/nvme0n1`
+
+5. reboot
 
 ## adapting to your own needs
 
@@ -85,7 +90,7 @@ internet:
 - [ ] run the script to partition, format, encrypt, and mount your disks,
       and then install NixOS:
 
-      `sh -c mknix /dev/nvme0n1`
+      `sh ./mknix /dev/nvme0n1`
 
 - [ ] reboot
 
