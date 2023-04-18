@@ -94,7 +94,9 @@ internet:
       nix run github:ryantm/agenix -- -e hashedPassword.age -i /tmp/ssh_host_ed25519_key
       # then, `:r! mkpasswd -msha512crypt sam`
       # and make sure it is the only line in the file
-      # finally, close with `:q`
+      # then remove the password from the vim history: `:call histdel(":", "mkpasswd")`
+      # and write out viminfo: `:wviminfo!`
+      # finally, close with `:wq`
       ```
 
 - [ ] run the script to partition, format, encrypt, and mount your disks,
