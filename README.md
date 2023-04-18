@@ -2,6 +2,17 @@
 
 a flaky example of NixOS configuration with full-disk encryption, home-manager, & secrets
 
+## branches
+
+I started this repository as a minimal working example to iron out issues
+before applying the approach to my own system flake & dotfiles. Here is the
+[discourse][discourse-bootstrap] where I posted my progress & questions.
+
+Now I'm coming back with fresh eyes and I see the organization with the
+different branches is probably confusing for people who just want to get
+rolling, so I'm going to merge `ragenix` back into `main`. I'll leave the
+`agenix` and `sops-nix` branches as alternate examples.
+
 ## getting started
 
 0. get a [NixOS] live system, e.g., from the [NixOS download page], or by
@@ -89,6 +100,7 @@ _____________
 
 [NixOS]: https://nixos.org
 [NixOS download page]: https://nixos.org/download.html
+[discourse-bootstrap]: https://discourse.nixos.org/t/bootstrap-fresh-install-using-agenix-for-secrets-management
 [mt-caret]: https://mt-caret.github.io/blog/posts/2020-06-29-optin-state.html
 [eyd]: https://grahamc.com/blog/erase-your-darlings
 [fish-n-nix]: https://mjhart.netlify.app/posts/2020-03-14-nix-and-fish.html
