@@ -22,7 +22,7 @@ rolling, so I'm going to merge `ragenix` back into `main`. I'll leave the
 
    or
 
-   `nix build github:bluesquall/tabula-rasa/ragenix#nixosConfigurations.iso.config.system.build.isoImage`
+   `nix build github:bluesquall/tabula-rasa#nixosConfigurations.iso.config.system.build.isoImage`
 
 1. boot into the [NixOS] live system
 
@@ -40,7 +40,7 @@ rolling, so I'm going to merge `ragenix` back into `main`. I'll leave the
   
   or download just the `mknix` script:
   
-  `curl -#SLO https://raw.githubusercontent.com/bluesquall/tabula-rasa/ragenix/mknix`
+  `curl -#SLO https://raw.githubusercontent.com/bluesquall/tabula-rasa/mknix`
 
 4. run the script to partition and format your disks, then install NixOS
 
@@ -80,7 +80,6 @@ internet:
 
       ```shell
       pushd /tmp/tabula-rasa
-      git checkout -b ragenix origin/ragenix
       pushd user/flynn/secrets
       nvim secrets.nix
       # then, `:r! cat /tmp/ssh_host_ed25519_key.pub`
