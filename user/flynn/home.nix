@@ -6,6 +6,7 @@ let
 in
 {
   programs.home-manager.enable = true;
+  fonts.fontconfig.enable = true;
   home = {
     username = "${USERNAME}";
     homeDirectory = "/home/${USERNAME}";
@@ -19,6 +20,7 @@ in
 
     packages = with pkgs; [
       dejavu_fonts
+      (nerdfonts.override { fonts = [ "FiraCode" ]; })
       less
       tree
     ];
