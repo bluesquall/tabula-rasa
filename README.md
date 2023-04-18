@@ -99,6 +99,8 @@ internet:
 
 ### full-disk encryption (and darling erasure)
 
+- [discourse-bootstrap]
+
 - [mt-caret]
 
 - [eyd]
@@ -158,6 +160,7 @@ _____________
 
 [NixOS]: https://nixos.org
 [NixOS download page]: https://nixos.org/download.html
+[discourse-bootstrap]: https://discourse.nixos.org/t/bootstrap-fresh-install-using-agenix-for-secrets-management/
 [mt-caret]: https://mt-caret.github.io/blog/posts/2020-06-29-optin-state.html
 [eyd]: https://grahamc.com/blog/erase-your-darlings
 [fish-n-nix]: https://mjhart.netlify.app/posts/2020-03-14-nix-and-fish.html
