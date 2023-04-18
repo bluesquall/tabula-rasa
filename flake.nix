@@ -52,10 +52,19 @@
 
     homeConfigurations = {
       flynn = home-manager.lib.homeManagerConfiguration {
-        inherit system;
-        username = "flynn";
-        homeDirectory = "/home/flynn";
-        configuration = { imports = [ ./user/flynn/home.nix ]; };
+        # TODO^ Is there and idomatic way to put this in ./user/flynn/flake.nix?
+	pkgs = nixpkgs.legacyPackages.${system};
+        modules = [
+	  ./user/flynn/home.nix
+	  {
+	    home = {
+	      username = "flynn";
+              homeDirectory = "/home/flynn";
+              stateVersion = "22.11";
+	    };
+	  }
+	];
+	# extraSpecialArgs = { inherit inputs outputs; };
       };
     };
 
