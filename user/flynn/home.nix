@@ -1,8 +1,16 @@
 { pkgs, ... }:
 
+let
+  USERNAME = "flynn";
+in
 {
   programs.home-manager.enable = true;
+  fonts.fontconfig.enable = true;
   home = {
+    username = "${USERNAME}";
+    homeDirectory = "/home/${USERNAME}";
+    stateVersion = "22.11";
+
     sessionVariables = {
       PAGER = "less";
       EDITOR = "nvim";
@@ -11,6 +19,7 @@
 
     packages = with pkgs; [
       dejavu_fonts
+      (nerdfonts.override { fonts = [ "FiraCode" ]; })
       less
       tree
     ];

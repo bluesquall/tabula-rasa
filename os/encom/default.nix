@@ -7,23 +7,52 @@ in
 {
   imports = [
     ../filesystems.nix
-    (modulesPath + "/installer/scan/not-detected.nix")
   ];
 
+  services.openssh = {
+    enable = true;
+    hostKeys = [
+      {
+        path = "/etc/ssh/ssh_host_rsa_key";
+        type = "rsa";
+        bits = 4096;
+      }
+      {
+        path = "/etc/ssh/ssh_host_ed25519_key";
+        type = "ed25519";
+      }
+    ];
+  };
+
+  nixpkgs.config.allowUnfree = true;
+
   hardware = {
-    # enableAllFirmware = true;
+    enableAllFirmware = true;
     cpu.intel.updateMicrocode = true;
+    enableRedistributableFirmware = lib.mkDefault true;
     opengl = {
       driSupport = true;
       driSupport32Bit = true;
     };
     video.hidpi.enable = lib.mkDefault true;
+    bluetooth = {
+      enable = true;
+      settings = {
+        General = {
+          Enable = "Source,Sink,Media,Socket";
+        };
+      };
+    };
+    pulseaudio = {
+      enable = true;
+      package = pkgs.pulseaudioFull;
+      extraModules = [ pkgs.pulseaudio-modules-bt ];
+    };
   };
 
   boot = {
     kernelModules = [ "kvm-intel" ];
-    kernelPackages = pkgs.linuxPackages_latest;
-    supportedFilesystems = [ "btrfs" ];
+    kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
     loader = {
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
@@ -32,6 +61,7 @@ in
 
   networking = {
     hostName = HOSTNAME;
+    hostId = "DEADBEEF";
     useDHCP = false;
     networkmanager.enable = true;
     firewall.enable = false;
@@ -42,7 +72,6 @@ in
   i18n.defaultLocale = "en_US.UTF-8";
 
   services = {
-    openssh.enable = true;
     xserver = {
       enable = true;
       dpi = 180;
@@ -61,12 +90,14 @@ in
     };
   };
 
-  environment.systemPackages = with pkgs; [ bash curl git xterm zsh ];
+  sound.enable = true;
+
+  environment.systemPackages = with pkgs; [ bash cryptsetup curl git libqrencode xterm zsh ];
 
   users = {
     mutableUsers = false;
     users.root.hashedPassword= "!"; # < disable password login for root
   };
-  
-  system.stateVersion = "22.05";
+
+  system.stateVersion = "22.11";
 }

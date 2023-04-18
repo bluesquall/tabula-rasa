@@ -5,29 +5,34 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
+    agenix.url = "github:yaxitech/ragenix";
+    agenix.inputs.nixpkgs.follows = "nixpkgs";
+
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { nixpkgs, home-manager, ... }:
+  outputs = { nixpkgs, agenix, home-manager, ... }:
   let
 
     lib = nixpkgs.lib;
     system = "x86_64-linux";
+    overlays = [ agenix.overlay ];
 
     pkgs = import nixpkgs {
-      inherit system;
-#        config.allowUnfree = true;
-#        # ^enable this if you need all firmware
+      inherit system overlays;
+      config.allowUnfree = true;
     };
 
     baseModules = [
+      agenix.nixosModules.age
       ({ lib, pkgs, ... }: {
         nix = {
           package = pkgs.nixUnstable;
-          extraOptions = "experimental-features = nix-command flakes";
+          extraOptions = "experimental-features = nix-command flakes recursive-nix";
+          systemFeatures = [ "recursive-nix" ];
         };
 
         networking = {
@@ -37,7 +42,8 @@
         };
 
         environment.systemPackages = with pkgs; [
-	  bash curl git neovim tmux zsh
+          agenix.defaultPackage.x86_64-linux
+          bash curl git neovim tmux zsh
         ];
       })
     ];
@@ -46,10 +52,9 @@
 
     homeConfigurations = {
       flynn = home-manager.lib.homeManagerConfiguration {
-        inherit system;
-        username = "flynn";
-        homeDirectory = "/home/flynn";
-        configuration = { imports = [ ./user/flynn/home.nix ]; };
+	pkgs = nixpkgs.legacyPackages.${system};
+        modules = [ ./user/flynn/home.nix ];
+	# extraSpecialArgs = { inherit inputs outputs; };
       };
     };
 

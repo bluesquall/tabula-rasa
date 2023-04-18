@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+set -e
+
+# remote:
+url="github:bluesquall/tabula-rasa/ragenix#encom"
+# local:
+url=".#encom"
+
+usage() {
+  echo "please specify the drive to prepare for NixOS (e.g., /dev/nvme0n1)";
+}
+
+while [[ $# -gt 1 ]]; do
+  case "$1" in
+    -u | --url )
+      shift
+      url="$1"
+      host=$(echo ${url} | cut -d "#" -f 2)
+      ;;
+    *)
+      usage;
+      exit 1;
+  esac
+  shift
+done
+
+if [[ $# == 1 ]]; then
+  drive="$1";
+else
+  usage;
+  exit 1;
+fi
+
+if [[ -f "/tmp/ssh_host_ed25519_key" ]]; then
+  echo "ragenix will use ed25519 host private key from /tmp"
+else
+  echo "please put a ed25519 host private key in /tmp"
+  echo "and make sure secrets.yaml has been encoded for the"
+  echo "corresponding public key"
+  exit 1;
+fi
+
+echo "preparing drive ${drive} for NixOS"
+echo ""
+echo "WARNING!"
+echo "this script will overwrite everything on ${drive}"
+echo "the current partition table on ${drive} is:"
+sgdisk --print ${drive}
+read -r -p "type ${drive} to confirm and overwrite partitions ~> " confirm
+if [[ ! ${confirm} == ${drive} ]]; then exit 1; fi
+
+sgdisk --clear ${drive}
+sgdisk --new 1:4096:1024000 --typecode 1:ef00 --change-name 1:EFI ${drive}
+sgdisk --new 2:1024001: --typecode 2:8309 --change-name 2:ZED ${drive}
+sgdisk --print ${drive}
+partprobe ${drive}; sleep 2
+
+mkfs.vfat -n EFI /dev/disk/by-partlabel/EFI
+
+zpool create -f -O atime=off -O snapdir=visible -O xattr=sa -O acltype=posixacl -O compression=lz4 -O encryption=aes-256-gcm -O keylocation=prompt -O keyformat=passphrase -o ashift=12 -o altroot=/mnt rpool /dev/disk/by-partlabel/ZED
+zfs create -p -o reservation=1G -o mountpoint=none rpool/reserved # ZFS is copy-on-write
+zfs create -p -o mountpoint=legacy rpool/transient/root
+zfs snapshot rpool/transient/root@blank
+
+mount -t zfs rpool/transient/root /mnt
+echo "generating ssh RSA host keys"
+mkdir -p /mnt/etc/ssh
+ssh-keygen -q -t rsa -b 4096 -C "${hostname}" -N "" -f /mnt/etc/ssh/ssh_host_rsa_key
+echo "moving ssh ed25519 host secret key from /tmp to /etc/ssh"
+echo "  so ragenix can find and use it"
+mv /tmp/ssh_host_ed25519_key /mnt/etc/ssh
+ssh-keygen -yf /mnt/etc/ssh/ssh_host_ed25519_key > /mnt/etc/ssh/ssh_host_ed25519_key.pub
+echo "ssh ed25519 host public key in /etc/ssh:"
+cat /mnt/etc/ssh/ssh_host_ed25519_key.pub
+echo "taking a snapshot of root ready to bootstrap"
+zfs snapshot rpool/transient/root@strap
+zfs diff rpool/transient/root@blank rpool/transient/root@strap
+
+mkdir -p /mnt/boot
+mount /dev/disk/by-partlabel/EFI /mnt/boot
+
+zfs create -p -o mountpoint=legacy rpool/transient/nix
+zfs snapshot rpool/transient/nix@blank
+mkdir -p /mnt/nix
+mount -t zfs rpool/transient/nix /mnt/nix
+
+zfs create -p -o copies=2 -o mountpoint=legacy rpool/persistent/home
+zfs snapshot rpool/persistent/home@blank
+mkdir -p /mnt/home
+mount -t zfs rpool/persistent/home /mnt/home
+
+# zfs create -o compression=off -V 4G rpool/swap
+# mkswap -L SWAP /dev/zvol/rpool/swap
+
+zpool set bootfs=rpool/transient/root rpool # < set boot fs:
+
+#TODO add auto-snapshots of /home
+
+echo "running nixos-install"
+time nixos-install --flake ${url} --no-root-password
+
+umount -R /mnt
+zpool export rpool
+
+echo ""
+echo "IFF you did not see any errors, reboot and enjoy!"
