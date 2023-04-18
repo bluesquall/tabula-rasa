@@ -2,7 +2,6 @@
 
 let
   USERNAME = "flynn";
-  UID = 4983;
 in
 {
   programs.home-manager.enable = true;

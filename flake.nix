@@ -52,7 +52,6 @@
 
     homeConfigurations = {
       flynn = home-manager.lib.homeManagerConfiguration {
-        # TODO^ Is there and idomatic way to put this in ./user/flynn/flake.nix?
 	pkgs = nixpkgs.legacyPackages.${system};
         modules = [ ./user/flynn/home.nix ];
 	# extraSpecialArgs = { inherit inputs outputs; };
