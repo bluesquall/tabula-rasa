@@ -32,19 +32,19 @@ rolling, so I'm going to merge `ragenix` back into `main`. I'll leave the
 
 2. download the host keys to `/tmp`:
 
-  `curl -#SLO …`
+   `curl -#SLO …`
 
 3. clone this repo:
 
-  `git clone https://github.com/bluesquall/tabula-rasa.git`
+   `git clone https://github.com/bluesquall/tabula-rasa.git`
   
-  or download just the `mknix` script:
+   or download just the `mknix` script:
   
-  `curl -#SLO https://raw.githubusercontent.com/bluesquall/tabula-rasa/mknix`
+   `curl -#SLO https://raw.githubusercontent.com/bluesquall/tabula-rasa/mknix`
 
 4. run the script to partition and format your disks, then install NixOS
 
-  `sh ./mknix /dev/nvme0n1`
+   `sh ./mknix /dev/nvme0n1`
 
 5. reboot
 
