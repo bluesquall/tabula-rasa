@@ -32,7 +32,6 @@
         nix = {
           package = pkgs.nixUnstable;
           extraOptions = "experimental-features = nix-command flakes recursive-nix";
-          systemFeatures = [ "recursive-nix" ];
         };
 
         networking = {
@@ -43,7 +42,7 @@
 
         environment.systemPackages = with pkgs; [
           agenix.defaultPackage.x86_64-linux
-          bash curl git neovim tmux zsh
+         curl git neovim tmux
         ];
       })
     ];
