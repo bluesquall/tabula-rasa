@@ -2,7 +2,7 @@
 set -e
 
 # remote:
-url="github:bluesquall/tabula-rasa/ragenix#encom"
+url="github:bluesquall/tabula-rasa/main#encom"
 # local:
 url=".#encom"
 
