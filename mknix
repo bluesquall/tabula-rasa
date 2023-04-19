@@ -4,9 +4,11 @@ set -e
 if test -f "flake.nix"; then
   # local:
   url=".#encom"
+  opts="--no-root-password"
 else
   # remote:
   url="github:bluesquall/tabula-rasa/main#encom"
+  opts="--no-write-lock-file --no-root-password"
 fi
 
 usage() {
@@ -100,7 +102,7 @@ zpool set bootfs=rpool/transient/root rpool # < set boot fs:
 #TODO add auto-snapshots of /home
 
 echo "running nixos-install"
-time nixos-install --flake ${url} --no-root-password
+time nixos-install --flake ${url} ${opts}
 
 umount -R /mnt
 zpool export rpool
