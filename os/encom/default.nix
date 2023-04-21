@@ -90,7 +90,12 @@ in
 
   sound.enable = true;
 
-  environment.systemPackages = with pkgs; [ bash cryptsetup curl git qrencode xterm zsh ];
+  programs.zsh.enable = true;
+
+  environment = {
+    shells = with pkgs; [ bash zsh ];
+    systemPackages = with pkgs; [ cryptsetup curl git qrencode xterm ];
+  };
 
   users = {
     mutableUsers = false;
