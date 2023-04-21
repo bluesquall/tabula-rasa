@@ -19,7 +19,7 @@ in
 
     packages = with pkgs; [
       dejavu_fonts
-      (nerdfonts.override { fonts = [ "FiraCode" ]; })
+      (nerdfonts.override { fonts = [ "Mononoki" ]; })
       less
       tree
     ];
@@ -59,7 +59,7 @@ exec xinput set-prop (xinput list --name-only | grep Touchpad) 'libinput Tapping
 UXTerm*foreground: orange
 UXTerm*background: black
 UXTerm*renderFont: true
-UXTerm*faceName: Deja Vu Sans Mono
+UXTerm*faceName: Mononoki Nerd Font
 UXTerm*faceSize: 8
 
 XTerm*selectToClipboard: true
