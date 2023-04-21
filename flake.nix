@@ -5,21 +5,21 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
+    rust-overlay.url = "github:oxalica/rust-overlay";
+
     agenix.url = "github:yaxitech/ragenix";
     agenix.inputs.nixpkgs.follows = "nixpkgs";
 
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    home-manager.url = "github:nix-community/home-manager";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { nixpkgs, agenix, home-manager, ... }:
+  outputs = { nixpkgs, rust-overlay, agenix, home-manager, ... }:
   let
 
     lib = nixpkgs.lib;
     system = "x86_64-linux";
-    overlays = [ agenix.overlay ];
+    overlays = [ rust-overlay.overlays.default agenix.overlays.default ];
 
     pkgs = import nixpkgs {
       inherit system overlays;
@@ -41,8 +41,8 @@
         };
 
         environment.systemPackages = with pkgs; [
-          agenix.defaultPackage.x86_64-linux
-         curl git neovim tmux
+          age agenix
+          curl git neovim tmux
         ];
       })
     ];
@@ -51,9 +51,9 @@
 
     homeConfigurations = {
       flynn = home-manager.lib.homeManagerConfiguration {
-	pkgs = nixpkgs.legacyPackages.${system};
+        pkgs = nixpkgs.legacyPackages.${system};
         modules = [ ./user/flynn/home.nix ];
-	# extraSpecialArgs = { inherit inputs outputs; };
+        # extraSpecialArgs = { inherit inputs outputs; };
       };
     };
 
@@ -69,10 +69,10 @@
       encom = lib.nixosSystem {
         inherit pkgs system;
         modules = baseModules ++ [
-	  home-manager.nixosModules.home-manager {
+            home-manager.nixosModules.home-manager {
             home-manager.useGlobalPkgs = true;
-	    # ^otherwise pure evaluation fails for flakes
-	    home-manager.useUserPackages = true;
+            # ^otherwise pure evaluation fails for flakes
+            home-manager.useUserPackages = true;
           }
           ./os/encom
           ./user/flynn
