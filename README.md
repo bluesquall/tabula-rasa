@@ -99,6 +99,19 @@ internet:
       # finally, close with `:wq`
       ```
 
+      If you are working from one of the official ISO images, you may
+      encounter an error:
+
+      > `error: experimental Nix feature ‘nix-command’ is disabled; use ‘--extra-experimental-features nix-command’ to override`
+
+      so you would replace:
+
+      `nix run github:ryantm/agenix -- -e hashedPassword.age -i /tmp/ssh_host_ed25519_key`
+
+      with:
+
+      `nix --extra-experimental-features nix-command --extra-experimental-features flakes run github:ryantm/agenix -- -e hashedPassword.age -i /tmp/ssh_host_ed25519_key`
+
 - [ ] run the script to partition, format, encrypt, and mount your disks,
       and then install NixOS:
 
