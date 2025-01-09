@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
-# remote:
-url="github:bluesquall/tabula-rasa/sops-nix#encom"
-# local:
-url=".#encom"
+if [[ -f "./flake.nix" ]]; then
+  url=".#encom"
+else
+  url="github:bluesquall/tabula-rasa/sops-nix#encom"
+fi
 
 usage() {
   echo "please specify the drive to prepare for NixOS (e.g., /dev/nvme0n1)";
