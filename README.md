@@ -40,6 +40,11 @@ e.g., from the [NixOS download page]
 ```shell
 curl --output-dir /tmp -#SLO https://raw.githubusercontent.com/bluesquall/tabula-rasa/sops-nix/INSECURITIES/ssh_host_ed25519_key
 ```
+#### c. adjust permissions on INSECURE host private key
+
+```shell
+chmod 0700 /tmp/ssh_host_ed25519_key
+```
 
 ### 3. download and run `mknix`
 
@@ -50,7 +55,7 @@ your disk, except for the EFI partition.
 
 ```shell
 curl -#SLO https://raw.githubusercontent.com/bluesquall/tabula-rasa/sops-nix/mknix
-sh ./mknix /dev/nvme0n1
+sudo sh ./mknix /dev/nvme0n1
 ```
 
 ### 4. reboot
