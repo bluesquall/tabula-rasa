@@ -34,6 +34,7 @@ fi
 
 if [[ -f "/tmp/ssh_host_ed25519_key" ]]; then
   echo "sops-nix will use ed25519 host private key from /tmp"
+  chmod 0700 /tmp/ssh_host_ed25519_key
 else
   echo "please put a ed25519 host private key in /tmp"
   echo "and make sure secrets.yaml has been encoded for the"
