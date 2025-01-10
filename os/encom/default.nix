@@ -26,18 +26,6 @@ in
     enableAllFirmware = true;
     cpu.intel.updateMicrocode = true;
     enableRedistributableFirmware = lib.mkDefault true;
-    bluetooth = {
-      enable = true;
-      settings = {
-        General = {
-          Enable = "Source,Sink,Media,Socket";
-        };
-      };
-    };
-    pulseaudio = {
-      enable = true;
-      package = pkgs.pulseaudioFull;
-    };
   };
 
   boot = {
@@ -93,8 +81,6 @@ in
       };
     };
   };
-
-  sound.enable = true;
 
   programs.zsh.enable = true;
 
