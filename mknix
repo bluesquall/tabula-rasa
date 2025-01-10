@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 set -e
 
-if [[ -f "./flake.nix" ]]; then
+if test -f "flake.nix"; then
+  # local:
   url=".#encom"
+  opts="--no-root-password"
 else
+  # remote:
   url="github:bluesquall/tabula-rasa/sops-nix#encom"
+  opts="--no-write-lock-file --no-root-password"
 fi
 
 usage() {
@@ -90,7 +94,6 @@ echo "corresponding age ed25519 public key:"
 nix-shell -p ssh-to-age --run 'ssh-keygen -yf /mnt/etc/ssh/ssh_host_ed25519_key | ssh-to-age'
 echo "taking a snapshot of root ready to bootstrap"
 zfs snapshot rpool/transient/root@strap
-
 zfs diff rpool/transient/root@blank rpool/transient/root@strap
 
 mkdir -p /mnt/boot
@@ -113,15 +116,11 @@ zpool set bootfs=rpool/transient/root rpool # < set boot fs:
 
 #TODO add auto-snapshots of /home
 
-echo "age ed25519 public key from /etc/ssh/ssh_host_ed25519_key:"
-nix-shell -p ssh-to-age --run 'ssh-keygen -yf /mnt/etc/ssh/ssh_host_ed25519_key | ssh-to-age'
-
 echo "running nixos-install"
-time nixos-install --flake ${url} --no-root-password
-
-zpool export rpool
+time nixos-install --flake ${url} ${opts}
 
 umount -R /mnt
+zpool export rpool
 
 echo ""
 echo "IFF you did not see any errors, reboot and enjoy!"
