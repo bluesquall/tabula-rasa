@@ -19,7 +19,7 @@ in
 
     packages = with pkgs; [
       dejavu_fonts
-      (nerdfonts.override { fonts = [ "Mononoki" ]; })
+      nerd-fonts.mononoki
       less
       tree
     ];
