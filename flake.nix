@@ -16,35 +16,26 @@
     };
   };
 
-  outputs = { self, nixpkgs, home-manager, sops-nix, ... }:
+  outputs = { self, nixpkgs, home-manager, sops-nix, ... }@inputs :
+
   let
-
-    lib = nixpkgs.lib;
-    system = "x86_64-linux";
-
-    pkgs = import nixpkgs {
-      inherit system;
-      config.allowUnfree = true;
-    };
-
     baseModules = [
+      nix = {
+        # package = pkgs.nixVersions.stable;
+        settings.experimental-features = [ "nix-command" "flakes" "recursive-nix" ];
+      }
+
+      networking = {
+        networkmanager.enable = true;
+        wireless.enable = nixpkgs.lib.mkForce false;
+        # ^because WPA Supplicant cannot run with NetworkManager
+      };
+
+      environment.systemPackages = with pkgs; [
+        age bash curl git neovim tmux zsh
+      ];
+
       sops-nix.nixosModules.sops
-      ({ lib, pkgs, ... }: {
-        nix = {
-          package = pkgs.nixVersions.latest;
-          extraOptions = "experimental-features = nix-command flakes recursive-nix";
-        };
-
-        networking = {
-          networkmanager.enable = true;
-          wireless.enable = lib.mkForce false;
-          # ^because WPA Supplicant cannot run with NetworkManager
-        };
-
-        environment.systemPackages = with pkgs; [
-          age bash curl git neovim tmux zsh
-        ];
-      })
     ];
 
   in {
@@ -59,17 +50,19 @@
 
     nixosConfigurations = {
 
-      iso = lib.nixosSystem {
-        inherit pkgs system;
+      iso = nixpkgs.lib.nixosSystem {
+        # inherit pkgs;
+        system = "x86_64-linux";
         modules = baseModules ++ [
           "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
         ];
       };
 
-      encom = lib.nixosSystem {
-        inherit pkgs system;
+      encom = nixpkgs.lib.nixosSystem {
+        # inherit pkgs;
+        system = "x86_64-linux";
         modules = baseModules ++ [
-            home-manager.nixosModules.home-manager {
+          home-manager.nixosModules.home-manager {
             home-manager.useGlobalPkgs = true;
             # ^otherwise pure evaluation fails for flakes
             home-manager.useUserPackages = true;
