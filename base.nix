@@ -10,6 +10,6 @@
   };
 
   environment.systemPackages = with pkgs; [
-    age agenix bash curl git neovim tmux zsh
+    age bash curl git neovim tmux zsh
   ];
 }

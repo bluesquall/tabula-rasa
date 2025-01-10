@@ -21,7 +21,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, home-manager, sops-nix, ... }@inputs : {
+  outputs = { self, nixpkgs, rust-overlay, agenix, home-manager, ... }@inputs : {
 
     homeConfigurations = {
       flynn = home-manager.lib.homeManagerConfiguration {
@@ -35,6 +35,7 @@
       iso = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         modules = [
+          agenix.nixosModules.age
           ./base.nix
           "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
         ];
@@ -43,6 +44,7 @@
       encom = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         modules = [
+          agenix.nixosModules.age
           home-manager.nixosModules.home-manager {
             home-manager.useGlobalPkgs = true;
             # ^otherwise pure evaluation fails for flakes
