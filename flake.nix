@@ -24,8 +24,7 @@
 
     pkgs = import nixpkgs {
       inherit system;
-#        config.allowUnfree = true;
-#        # ^enable this if you need all firmware
+      config.allowUnfree = true;
     };
 
     baseModules = [
@@ -33,7 +32,7 @@
       ({ lib, pkgs, ... }: {
         nix = {
           package = pkgs.nixUnstable;
-          extraOptions = "experimental-features = nix-command flakes";
+          extraOptions = "experimental-features = nix-command flakes recursive-nix";
         };
 
         networking = {
@@ -43,7 +42,7 @@
         };
 
         environment.systemPackages = with pkgs; [
-	  age bash curl git neovim tmux zsh
+          age bash curl git neovim tmux zsh
         ];
       })
     ];
@@ -52,10 +51,9 @@
 
     homeConfigurations = {
       flynn = home-manager.lib.homeManagerConfiguration {
-        inherit system;
-        username = "flynn";
-        homeDirectory = "/home/flynn";
-        configuration = { imports = [ ./user/flynn/home.nix ]; };
+        pkgs = nixpkgs.legacyPackages.${system};
+        modules = [ ./user/flynn/home.nix ];
+        # extraSpecialArgs = { inherit inputs outputs; };
       };
     };
 
@@ -71,10 +69,10 @@
       encom = lib.nixosSystem {
         inherit pkgs system;
         modules = baseModules ++ [
-	  home-manager.nixosModules.home-manager {
+            home-manager.nixosModules.home-manager {
             home-manager.useGlobalPkgs = true;
-	    # ^otherwise pure evaluation fails for flakes
-	    home-manager.useUserPackages = true;
+            # ^otherwise pure evaluation fails for flakes
+            home-manager.useUserPackages = true;
           }
           ./os/encom
           ./user/flynn
