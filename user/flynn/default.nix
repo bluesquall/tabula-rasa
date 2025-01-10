@@ -20,7 +20,7 @@ in
 
   home-manager.users.${USERNAME} = import ./home.nix;
 
-  services.xserver.displayManager.autoLogin = {
+  services.displayManager.autoLogin = {
     enable = true;
     user = USERNAME;
   };
