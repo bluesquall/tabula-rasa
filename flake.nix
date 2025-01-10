@@ -16,34 +16,15 @@
     };
   };
 
-  outputs = { self, nixpkgs, home-manager, sops-nix, ... }@inputs :
-
-  let
-    baseModules = [
-      nix = {
-        # package = pkgs.nixVersions.stable;
-        settings.experimental-features = [ "nix-command" "flakes" "recursive-nix" ];
-      }
-
-      networking = {
-        networkmanager.enable = true;
-        wireless.enable = nixpkgs.lib.mkForce false;
-        # ^because WPA Supplicant cannot run with NetworkManager
-      };
-
-      environment.systemPackages = with pkgs; [
-        age bash curl git neovim tmux zsh
-      ];
-
-      sops-nix.nixosModules.sops
-    ];
-
-  in {
+  outputs = { self, nixpkgs, home-manager, sops-nix, ... }@inputs : {
 
     homeConfigurations = {
       flynn = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.${system};
-        modules = [ ./user/flynn/home.nix ];
+        # pkgs = nixpkgs.legacyPackages.${system};
+        modules = [
+          ./user/flynn/home.nix
+          sops-nix.nixosModules.sops
+        ];
         # extraSpecialArgs = { inherit inputs outputs; };
       };
     };
@@ -53,7 +34,9 @@
       iso = nixpkgs.lib.nixosSystem {
         # inherit pkgs;
         system = "x86_64-linux";
-        modules = baseModules ++ [
+        modules = [
+          ./base.nix
+          sops-nix.nixosModules.sops
           "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
         ];
       };
@@ -61,12 +44,14 @@
       encom = nixpkgs.lib.nixosSystem {
         # inherit pkgs;
         system = "x86_64-linux";
-        modules = baseModules ++ [
+        modules = [
+          sops-nix.nixosModules.sops
           home-manager.nixosModules.home-manager {
             home-manager.useGlobalPkgs = true;
             # ^otherwise pure evaluation fails for flakes
             home-manager.useUserPackages = true;
           }
+          ./base.nix
           ./os/encom
           ./user/flynn
         ];
