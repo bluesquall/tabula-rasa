@@ -30,7 +30,6 @@ in
 
   boot = {
     kernelModules = [ "kvm-intel" ];
-    kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
     loader = {
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
