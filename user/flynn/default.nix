@@ -15,7 +15,7 @@ in
     isNormalUser = true;
     extraGroups = [ "dialout" "networkmanager" "wheel" ];
     shell = pkgs.zsh; # keep a POSIX login shell
-    passwordFile = config.sops.secrets.hashedPassword.path;
+    hashedPasswordFile = config.sops.secrets.hashedPassword.path;
   };
 
   home-manager.users.${USERNAME} = import ./home.nix;
