@@ -49,6 +49,11 @@ in
   i18n.defaultLocale = "en_US.UTF-8";
 
   services = {
+    displayManager = {
+      sddm.enable = true;
+      defaultSession = "none+i3";
+    };
+    libinput.enable = true;
     openssh = {
       enable = true;
       hostKeys = [
@@ -66,14 +71,9 @@ in
     xserver = {
       enable = true;
       dpi = 180;
-      layout = "us";
-      libinput.enable = true;
+      xkb.layout = "us";
       videoDrivers = [ "vesa" "modesetting" ];
       # ^these are tried in order until finding one that supports the GPU.
-      displayManager = {
-        sddm.enable = true;
-        defaultSession = "none+i3";
-      };
       windowManager.i3 = {
         enable = true;
         extraPackages = with pkgs; [ dmenu i3status ];
