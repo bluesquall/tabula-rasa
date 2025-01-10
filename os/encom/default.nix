@@ -26,10 +26,6 @@ in
     enableAllFirmware = true;
     cpu.intel.updateMicrocode = true;
     enableRedistributableFirmware = lib.mkDefault true;
-    opengl = {
-      driSupport = true;
-      driSupport32Bit = true;
-    };
     bluetooth = {
       enable = true;
       settings = {
