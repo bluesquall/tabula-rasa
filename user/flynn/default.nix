@@ -14,12 +14,12 @@ in
     isNormalUser = true;
     extraGroups = [ "dialout" "networkmanager" "wheel" ];
     shell = pkgs.zsh; # keep a POSIX login shell
-    passwordFile = config.age.secrets.hashedPassword.path;
+    hashedPasswordFile = config.age.secrets.hashedPassword.path;
   };
 
   home-manager.users.${USERNAME} = import ./home.nix;
 
-  services.xserver.displayManager.autoLogin = {
+  services.displayManager.autoLogin = {
     enable = true;
     user = USERNAME;
   };

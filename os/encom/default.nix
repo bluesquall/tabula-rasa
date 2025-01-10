@@ -30,27 +30,10 @@ in
     enableAllFirmware = true;
     cpu.intel.updateMicrocode = true;
     enableRedistributableFirmware = lib.mkDefault true;
-    opengl = {
-      driSupport = true;
-      driSupport32Bit = true;
-    };
-    bluetooth = {
-      enable = true;
-      settings = {
-        General = {
-          Enable = "Source,Sink,Media,Socket";
-        };
-      };
-    };
-    pulseaudio = {
-      enable = true;
-      package = pkgs.pulseaudioFull;
-    };
   };
 
   boot = {
     kernelModules = [ "kvm-intel" ];
-    kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
     loader = {
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
@@ -70,25 +53,23 @@ in
   i18n.defaultLocale = "en_US.UTF-8";
 
   services = {
+    displayManager = {
+      sddm.enable = true;
+      defaultSession = "none+i3";
+    };
+    libinput.enable = true;
     xserver = {
       enable = true;
       dpi = 180;
-      layout = "us";
-      libinput.enable = true;
+      xkb.layout = "us";
       videoDrivers = [ "vesa" "modesetting" ];
       # ^these are tried in order until finding one that supports the GPU.
-      displayManager = {
-        sddm.enable = true;
-        defaultSession = "none+i3";
-      };
       windowManager.i3 = {
         enable = true;
         extraPackages = with pkgs; [ dmenu i3status ];
       };
     };
   };
-
-  sound.enable = true;
 
   programs.zsh.enable = true;
 
@@ -102,5 +83,5 @@ in
     users.root.hashedPassword= "!"; # < disable password login for root
   };
 
-  system.stateVersion = "22.11";
+  system.stateVersion = "24.11";
 }

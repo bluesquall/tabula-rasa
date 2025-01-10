@@ -14,7 +14,7 @@
       homeConfigurations.flynn = home-manager.lib.homeManagerConfiguration {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
         modules = [ ./home.nix ];
-	# extraSpecialArgs = { inherit inputs outputs; };
+        # extraSpecialArgs = { inherit inputs outputs; };
       };
     };
 }

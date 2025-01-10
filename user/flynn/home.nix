@@ -9,7 +9,7 @@ in
   home = {
     username = "${USERNAME}";
     homeDirectory = "/home/${USERNAME}";
-    stateVersion = "22.11";
+    stateVersion = "24.11";
 
     sessionVariables = {
       PAGER = "less";
@@ -19,7 +19,7 @@ in
 
     packages = with pkgs; [
       dejavu_fonts
-      (nerdfonts.override { fonts = [ "Mononoki" ]; })
+      nerd-fonts.mononoki
       less
       tree
     ];
