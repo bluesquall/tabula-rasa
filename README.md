@@ -13,40 +13,53 @@ different branches is probably confusing for people who just want to get
 rolling, so I'm going to merge `ragenix` back into `main`. I'll leave the
 `agenix` and `sops-nix` branches as alternate examples.
 
-## getting started
+## INSECURE testing (quickstart)
 
-0. get a [NixOS] live system, e.g., from the [NixOS download page], or by
-   building the ISO image from this repo's `flake.nix`:
+The steps below will quickly get you to a bootable system, but use **INSECURE**
+secret keys that are stored in the open in this repository.
 
-   `nix build .#nixosConfigurations.iso.config.system.build.isoImage`
+**DO NOT USE THESE INSTRUCTIONS ON A PERMANENT SYSTEM** -- these insecure keys
+are provided for demonstration only. Please skip ahead to getting started if
+you want to make your own secure keys to use for anything other than
+demonstration.
 
-   or
+### 0. get a [NixOS] live system
 
-   `nix build github:bluesquall/tabula-rasa#nixosConfigurations.iso.config.system.build.isoImage`
+e.g., from the [NixOS download page]
 
-1. boot into the [NixOS] live system
+### 1. boot into the [NixOS] live system
 
-   - connect to your WiFi network:
+### 2. get online and pull INSECURE keys
 
-     `nmcli device wifi connect <SSID> --ask`
+#### a. connect to your WiFi network:
 
-2. download the host keys to `/tmp`:
+`nmcli device wifi connect <SSID> --ask`
+   
+#### b. pull the INSECURE host private key into `/tmp`
 
-   `curl -#SLO …`
+```shell
+curl --output-dir /tmp -#SLO https://raw.githubusercontent.com/bluesquall/tabula-rasa/main/INSECURITIES/ssh_host_ed25519_key
+```
 
-3. clone this repo:
+### 3. download and run `mknix`
 
-   `git clone https://github.com/bluesquall/tabula-rasa.git`
+**This script will overwrite everything on the disk you direct it to.**
 
-   or download just the `mknix` script:
+The script will prompt you for a LUKS passphrase. This encrypts everything on
+your disk, except for the EFI partition.
 
-   `curl -#SLO https://raw.githubusercontent.com/bluesquall/tabula-rasa/main/mknix`
+```shell
+curl -#SLO https://raw.githubusercontent.com/bluesquall/tabula-rasa/main/mknix
+sudo sh ./mknix /dev/nvme0n1
+```
 
-4. run the script to partition and format your disks, then install NixOS
+### 4. reboot
 
-   `sh ./mknix /dev/nvme0n1`
+Your username is `flynn` and your password is `sam`.
 
-5. reboot
+Now you have a working NixOS installation on an encrypted drive. Remember that
+your `sops-nix`	secrets are **INSECURE** because the secret keys are posted
+publicly. Proceed to the next section to re-key and change the secrets.
 
 ## adapting to your own needs
 
