@@ -56,18 +56,36 @@ if [[ ! ${confirm} == ${drive} ]]; then exit 1; fi
 
 sgdisk --clear ${drive}
 sgdisk --new 1:4096:1024000 --typecode 1:ef00 --change-name 1:EFI ${drive}
-sgdisk --new 2:1024001: --typecode 2:8309 --change-name 2:ZED ${drive}
+sgdisk --new 2:1024001: --typecode 2:8309 --change-name 2:LUKS ${drive}
 sgdisk --print ${drive}
 partprobe ${drive}; sleep 2
 
 mkfs.vfat -n EFI /dev/disk/by-partlabel/EFI
 
-zpool create -f -O atime=off -O snapdir=visible -O xattr=sa -O acltype=posixacl -O compression=lz4 -O encryption=aes-256-gcm -O keylocation=prompt -O keyformat=passphrase -o ashift=12 -o altroot=/mnt rpool /dev/disk/by-partlabel/ZED
+SALT_LENGTH=16
+KEY_LENGTH=512
+ITERATIONS=1000000
+
+nix-shell https://github.com/sgillespie/nixos-yubikey-luks/archive/master.tar.gz
+SALT="$(dd if=/dev/random bs=1 count=$SALT_LENGTH 2>/dev/null | rbtohex)"
+CHALLENGE="$(echo -n $SALT | openssl dgst -binary -sha512 | rbtohex)"
+RESPONSE="$(ykchalresp -2 -x $CHALLENGE 2>/dev/null)"
+LUKS_KEY="$(echo | pbkdf2-sha512 $(($KEY_LENGTH / 8)) $ITERATIONS $RESPONSE | rbtohex)"
+
+echo -n "$LUKS_KEY" | hextorb | cryptsetup luksFormat cipher=aes-xts-plain64 --key-size="$KEY_LENGTH" --hash=sha512 --key-file=- /dev/disk/by-partlabel/LUKS
+echo -n "$LUKS_KEY" | hextorb | cryptsetup open /dev/disk/by-partlabel/LUKS ZED --key-file=-
+
+zpool create -f -O atime=off -O snapdir=visible -O xattr=sa -O acltype=posixacl -O compression=lz4 ashift=12 -o altroot=/mnt rpool /dev/mapper/ZED
 zfs create -p -o reservation=1G -o mountpoint=none rpool/reserved # ZFS is copy-on-write
 zfs create -p -o mountpoint=legacy rpool/transient/root
 zfs snapshot rpool/transient/root@blank
 
 mount -t zfs rpool/transient/root /mnt
+mkdir -p /mnt/boot
+mount /dev/disk/by-partlabel/EFI /mnt/boot
+echo -ne "$SALT\n$ITERATIONS" > /mnt/boot/salt-it
+
+
 echo "generating ssh RSA host keys"
 mkdir -p /mnt/etc/ssh
 ssh-keygen -q -t rsa -b 4096 -C "${hostname}" -N "" -f /mnt/etc/ssh/ssh_host_rsa_key
@@ -80,9 +98,6 @@ cat /mnt/etc/ssh/ssh_host_ed25519_key.pub
 echo "taking a snapshot of root ready to bootstrap"
 zfs snapshot rpool/transient/root@strap
 zfs diff rpool/transient/root@blank rpool/transient/root@strap
-
-mkdir -p /mnt/boot
-mount /dev/disk/by-partlabel/EFI /mnt/boot
 
 zfs create -p -o mountpoint=legacy rpool/transient/nix
 zfs snapshot rpool/transient/nix@blank
