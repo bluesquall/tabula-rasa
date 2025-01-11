@@ -66,16 +66,15 @@ SALT_LENGTH=16
 KEY_LENGTH=512
 ITERATIONS=1000000
 
-nix-shell https://github.com/sgillespie/nixos-yubikey-luks/archive/master.tar.gz
 SALT="$(dd if=/dev/random bs=1 count=$SALT_LENGTH 2>/dev/null | rbtohex)"
 CHALLENGE="$(echo -n $SALT | openssl dgst -binary -sha512 | rbtohex)"
 RESPONSE="$(ykchalresp -2 -x $CHALLENGE 2>/dev/null)"
 LUKS_KEY="$(echo | pbkdf2-sha512 $(($KEY_LENGTH / 8)) $ITERATIONS $RESPONSE | rbtohex)"
 
-echo -n "$LUKS_KEY" | hextorb | cryptsetup luksFormat cipher=aes-xts-plain64 --key-size="$KEY_LENGTH" --hash=sha512 --key-file=- /dev/disk/by-partlabel/LUKS
+echo -n "$LUKS_KEY" | hextorb | cryptsetup luksFormat --cipher=aes-xts-plain64 --key-size="$KEY_LENGTH" --hash=sha512 --key-file=- /dev/disk/by-partlabel/LUKS
 echo -n "$LUKS_KEY" | hextorb | cryptsetup open /dev/disk/by-partlabel/LUKS ZED --key-file=-
 
-zpool create -f -O atime=off -O snapdir=visible -O xattr=sa -O acltype=posixacl -O compression=lz4 ashift=12 -o altroot=/mnt rpool /dev/mapper/ZED
+zpool create -f -O atime=off -O snapdir=visible -O xattr=sa -O acltype=posixacl -O compression=lz4 -o ashift=12 -o altroot=/mnt rpool /dev/mapper/ZED
 zfs create -p -o reservation=1G -o mountpoint=none rpool/reserved # ZFS is copy-on-write
 zfs create -p -o mountpoint=legacy rpool/transient/root
 zfs snapshot rpool/transient/root@blank
@@ -84,7 +83,6 @@ mount -t zfs rpool/transient/root /mnt
 mkdir -p /mnt/boot
 mount /dev/disk/by-partlabel/EFI /mnt/boot
 echo -ne "$SALT\n$ITERATIONS" > /mnt/boot/salt-it
-
 
 echo "generating ssh RSA host keys"
 mkdir -p /mnt/etc/ssh
